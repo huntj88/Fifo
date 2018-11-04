@@ -15,6 +15,17 @@ private data class Pair(val gainSoFar: Double, val remainingSold: List<Fifo.Tran
 
 class Fifo(private val purchases: List<Transaction>, private val sales: List<Transaction>) {
 
+    data class Transaction(val items: Double, val currencyAmount: Double) {
+
+        constructor(transaction: Transaction, itemsLeft: Double) : this(
+                items = itemsLeft,
+                currencyAmount = transaction.currencyAmount * itemsLeft / transaction.items
+        )
+
+        val currencyPerUnit: Double
+            get() = this.currencyAmount / items
+    }
+
     fun findRealizedGain(): Double {
 
         val initialValue = Pair(gainSoFar = 0.0, remainingSold = this.sales)
@@ -110,18 +121,5 @@ class Fifo(private val purchases: List<Transaction>, private val sales: List<Tra
         data class PurchaseLeftOver(val purchase: Transaction, val gain: Double) : LeftOverOneSale()
         data class SoldLeftOver(val sold: Transaction, val gain: Double) : LeftOverOneSale()
         data class BothUsed(val gain: Double) : LeftOverOneSale()
-    }
-
-    data class Transaction(
-            val items: Double,
-            val currencyAmount: Double
-    ) {
-        constructor(transaction: Transaction, itemsLeft: Double) : this(
-                items = itemsLeft,
-                currencyAmount = transaction.currencyAmount * itemsLeft / transaction.items
-        )
-
-        val currencyPerUnit: Double
-            get() = this.currencyAmount / items
     }
 }
