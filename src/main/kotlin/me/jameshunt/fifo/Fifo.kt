@@ -23,7 +23,7 @@ class Fifo(private val purchases: List<Transaction>, private val sales: List<Tra
         )
 
         val currencyPerUnit: Double
-            get() = this.currencyAmount / items
+            get() = this.currencyAmount / this.items
     }
 
     fun findRealizedGain(): Double {
