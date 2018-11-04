@@ -2,7 +2,7 @@ package me.jameshunt.fifo
 
 import kotlin.math.absoluteValue
 
-internal infix fun Double.to(that: Double): Fifo.Transaction = Fifo.Transaction(this, that)
+infix fun Double.to(that: Double): Fifo.Transaction = Fifo.Transaction(this, that)
 
 class Fifo(private val purchased: List<Transaction>, private val sold: List<Transaction>) {
 
@@ -45,7 +45,7 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
         }
     }
 
-    sealed class LeftOver {
+    internal sealed class LeftOver {
         data class PurchaseLeftOver(val purchase: Transaction, val gain: Double) : LeftOver()
         data class SoldLeftOver(val remainingSold: List<Transaction>, val gain: Double) : LeftOver()
         data class BothUsed(val remainingSold: List<Transaction>, val gain: Double) : LeftOver()
@@ -75,7 +75,7 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
         }
     }
 
-    sealed class LeftOverOneEach {
+    internal sealed class LeftOverOneEach {
         data class PurchaseLeftOver(val purchase: Transaction, val gain: Double) : LeftOverOneEach()
         data class SoldLeftOver(val sold: Transaction, val gain: Double) : LeftOverOneEach()
         data class BothUsed(val gain: Double) : LeftOverOneEach()
@@ -94,4 +94,3 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
             get() = currencyAmount / items
     }
 }
-
