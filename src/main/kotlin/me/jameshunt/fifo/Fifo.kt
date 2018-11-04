@@ -4,6 +4,12 @@ import kotlin.math.absoluteValue
 
 infix fun Double.to(that: Double): Fifo.Transaction = Fifo.Transaction(this, that)
 
+/**
+ * Functional approach to computing gain using "First in, First out"
+ *
+ * Yay, no state
+ */
+
 /** just a pair with named variables. I can't come up with a better name without it being super verbose **/
 private data class Pair(val gainSoFar: Double, val remainingSold: List<Fifo.Transaction>)
 
