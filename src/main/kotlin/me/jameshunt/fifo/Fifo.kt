@@ -29,6 +29,17 @@ class Fifo(private val purchases: List<Transaction>, private val sales: List<Tra
         is LeftOver.SoldLeftOver -> Pair(gainSoFar = this.gain, remainingSold = this.remainingSold)
     }
 
+    /**
+     * recursive function
+     *
+     * When one purchase is "used", The gain made on that purchase is computed
+     * against on all sales before you run out of "inventory" from that purchase.
+     *
+     * The sales used to calculate the gain on the purchase are also removed from the list
+     *
+     * After it computes the gain on that purchase, it is added to the existing gain
+     */
+
     internal fun useOnePurchase(purchase: Transaction, remainingSold: List<Transaction>, gain: Double = 0.0): LeftOver {
 
         val sold = remainingSold.firstOrNull() ?: return LeftOver.PurchaseLeftOver(purchase = purchase, gain = gain)
@@ -36,19 +47,19 @@ class Fifo(private val purchases: List<Transaction>, private val sales: List<Tra
         val leftOver = this.useOneSaleOnPurchase(purchase = purchase, sold = sold)
 
         return when (leftOver) {
-            is LeftOverOneEach.PurchaseLeftOver -> this.useOnePurchase(
+            is LeftOverOneSale.PurchaseLeftOver -> this.useOnePurchase(
                     purchase = leftOver.purchase,
                     remainingSold = remainingSold.removeFirst(),
                     gain = leftOver.gain + gain
             )
-            is LeftOverOneEach.SoldLeftOver -> {
+            is LeftOverOneSale.SoldLeftOver -> {
                 val newRemainingSold = listOf(leftOver.sold) + remainingSold.removeFirst()
                 LeftOver.SoldLeftOver(
                         remainingSold = newRemainingSold,
                         gain = leftOver.gain + gain
                 )
             }
-            is LeftOverOneEach.BothUsed -> LeftOver.SoldLeftOver(
+            is LeftOverOneSale.BothUsed -> LeftOver.SoldLeftOver(
                     remainingSold = remainingSold.removeFirst(),
                     gain = leftOver.gain + gain
             )
@@ -62,33 +73,37 @@ class Fifo(private val purchases: List<Transaction>, private val sales: List<Tra
         data class SoldLeftOver(val remainingSold: List<Transaction>, val gain: Double) : LeftOver()
     }
 
-    internal fun useOneSaleOnPurchase(purchase: Transaction, sold: Transaction): LeftOverOneEach {
+    /**
+     * applies one sale against a purchase
+     */
+
+    internal fun useOneSaleOnPurchase(purchase: Transaction, sold: Transaction): LeftOverOneSale {
         val itemsLeft = purchase.items - sold.items
 
         return when {
-            itemsLeft == 0.0 -> LeftOverOneEach.BothUsed(gain = sold.currencyAmount - purchase.currencyAmount)
+            itemsLeft == 0.0 -> LeftOverOneSale.BothUsed(gain = sold.currencyAmount - purchase.currencyAmount)
             itemsLeft > 0 -> {
                 val purchaseLeftOver = Transaction(transaction = purchase, itemsLeft = itemsLeft)
                 val numSold = purchase.items - purchaseLeftOver.items
                 val gain = (sold.currencyPerUnit - purchase.currencyPerUnit) * numSold
 
-                LeftOverOneEach.PurchaseLeftOver(purchase = purchaseLeftOver, gain = gain)
+                LeftOverOneSale.PurchaseLeftOver(purchase = purchaseLeftOver, gain = gain)
             }
             itemsLeft < 0 -> {
                 val soldLeftOver = Transaction(sold, itemsLeft.absoluteValue)
                 val numSold = sold.items - soldLeftOver.items
                 val gain = (sold.currencyPerUnit - purchase.currencyPerUnit) * numSold
 
-                LeftOverOneEach.SoldLeftOver(sold = soldLeftOver, gain = gain)
+                LeftOverOneSale.SoldLeftOver(sold = soldLeftOver, gain = gain)
             }
             else -> throw IllegalStateException()
         }
     }
 
-    internal sealed class LeftOverOneEach {
-        data class PurchaseLeftOver(val purchase: Transaction, val gain: Double) : LeftOverOneEach()
-        data class SoldLeftOver(val sold: Transaction, val gain: Double) : LeftOverOneEach()
-        data class BothUsed(val gain: Double) : LeftOverOneEach()
+    internal sealed class LeftOverOneSale {
+        data class PurchaseLeftOver(val purchase: Transaction, val gain: Double) : LeftOverOneSale()
+        data class SoldLeftOver(val sold: Transaction, val gain: Double) : LeftOverOneSale()
+        data class BothUsed(val gain: Double) : LeftOverOneSale()
     }
 
     data class Transaction(
