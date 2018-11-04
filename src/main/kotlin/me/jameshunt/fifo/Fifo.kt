@@ -13,7 +13,7 @@ infix fun Double.to(that: Double): Fifo.Transaction = Fifo.Transaction(this, tha
 /** just a pair with named variables. I can't come up with a better name without it being super verbose **/
 private data class Pair(val gainSoFar: Double, val remainingSold: List<Fifo.Transaction>)
 
-class Fifo(private val purchases: List<Transaction>, private val sales: List<Transaction>) {
+object Fifo {
 
     data class Transaction(val items: Double, val currencyAmount: Double) {
 
@@ -26,22 +26,22 @@ class Fifo(private val purchases: List<Transaction>, private val sales: List<Tra
             get() = this.currencyAmount / this.items
     }
 
-    fun findRealizedGain(): Double {
+    fun findRealizedGain(purchases: List<Transaction>, sales: List<Transaction>): Double {
 
-        val initialValue = Pair(gainSoFar = 0.0, remainingSold = this.sales)
-        return this.purchases.fold(initial = initialValue) { acc, purchase ->
+        val initialValue = Pair(gainSoFar = 0.0, remainingSold = sales)
+        return purchases.fold(initial = initialValue) { acc, purchase ->
 
             val onePassResults = this.useOnePurchase(
                     purchase = purchase,
                     remainingSold = acc.remainingSold
-            ).handleRemainingSold()
+            ).handleLeftOver()
 
             val currentGain = acc.gainSoFar + onePassResults.gainSoFar
             Pair(gainSoFar = currentGain, remainingSold = onePassResults.remainingSold)
         }.gainSoFar
     }
 
-    private fun LeftOver.handleRemainingSold(): Pair = when (this) {
+    private fun LeftOver.handleLeftOver(): Pair = when (this) {
         is LeftOver.PurchaseLeftOver -> Pair(gainSoFar = this.gain, remainingSold = listOf())
         is LeftOver.SoldLeftOver -> Pair(gainSoFar = this.gain, remainingSold = this.remainingSold)
     }
