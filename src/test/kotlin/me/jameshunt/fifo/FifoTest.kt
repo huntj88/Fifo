@@ -39,16 +39,16 @@ class FifoTest {
     @Test
     fun useOneSaleOnPurchaseTest() {
 
-        val one = fifo.useOneSaleOnPurchase(2.0 to 20.0, 3.0 to 70.0) as Fifo.LeftOverOneEach.SoldLeftOver
+        val one = fifo.useOneSaleOnPurchase(2.0 to 20.0, 3.0 to 70.0) as Fifo.LeftOverOneSale.SoldLeftOver
         Assert.assertEquals(26.6666, one.gain, 0.0001) // should be gain of 26.6666
 
-        val two = fifo.useOneSaleOnPurchase(4.0 to 20.0, 3.0 to 70.0) as Fifo.LeftOverOneEach.PurchaseLeftOver
+        val two = fifo.useOneSaleOnPurchase(4.0 to 20.0, 3.0 to 70.0) as Fifo.LeftOverOneSale.PurchaseLeftOver
         Assert.assertEquals(55.00, two.gain, 0.0001) // should be gain of 55.0
 
-        val three = fifo.useOneSaleOnPurchase(4.0 to 20.0, 3.0 to 18.0) as Fifo.LeftOverOneEach.PurchaseLeftOver
+        val three = fifo.useOneSaleOnPurchase(4.0 to 20.0, 3.0 to 18.0) as Fifo.LeftOverOneSale.PurchaseLeftOver
         Assert.assertEquals(3.0, three.gain, 0.0001) // should be gain of 3.0
 
-        val four = fifo.useOneSaleOnPurchase(4.0 to 20.0, 3.0 to 12.0) as Fifo.LeftOverOneEach.PurchaseLeftOver
+        val four = fifo.useOneSaleOnPurchase(4.0 to 20.0, 3.0 to 12.0) as Fifo.LeftOverOneSale.PurchaseLeftOver
         Assert.assertEquals(-3.0, four.gain, 0.0001) // should be gain of 3.0
     }
 
