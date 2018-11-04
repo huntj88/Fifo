@@ -10,7 +10,6 @@ infix fun Double.to(that: Double): Fifo.Transaction = Fifo.Transaction(this, tha
  * Yay, no state
  */
 
-/** just a pair with named variables. I can't come up with a better name without it being super verbose **/
 private data class Pair(val gainSoFar: Double, val remainingSold: List<Fifo.Transaction>)
 
 object Fifo {
@@ -98,7 +97,6 @@ object Fifo {
         val itemsLeft = purchase.items - sold.items
 
         return when {
-            itemsLeft == 0.0 -> LeftOverOneSale.BothUsed(gain = sold.currencyAmount - purchase.currencyAmount)
             itemsLeft > 0 -> {
                 val purchaseLeftOver = Transaction(transaction = purchase, itemsLeft = itemsLeft)
                 val numSold = purchase.items - purchaseLeftOver.items
@@ -113,7 +111,7 @@ object Fifo {
 
                 LeftOverOneSale.SoldLeftOver(sold = soldLeftOver, gain = gain)
             }
-            else -> throw IllegalStateException()
+            else -> LeftOverOneSale.BothUsed(gain = sold.currencyAmount - purchase.currencyAmount)
         }
     }
 
