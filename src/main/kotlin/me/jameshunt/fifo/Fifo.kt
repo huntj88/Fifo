@@ -27,22 +27,24 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
         return when (leftOver) {
             is LeftOverOneEach.PurchaseLeftOver -> useOnePurchase(
                     purchase = leftOver.purchase,
-                    remainingSold = remainingSold.subList(1, remainingSold.size),
+                    remainingSold = remainingSold.removeFirst(),
                     gain = leftOver.gain + gain
             )
             is LeftOverOneEach.SoldLeftOver -> {
-                val newRemainingSold = listOf(leftOver.sold) + remainingSold.subList(1, remainingSold.size)
+                val newRemainingSold = listOf(leftOver.sold) + remainingSold.removeFirst()
                 LeftOver.SoldLeftOver(
                         remainingSold = newRemainingSold,
                         gain = leftOver.gain + gain
                 )
             }
             is LeftOverOneEach.BothUsed -> LeftOver.SoldLeftOver(
-                    remainingSold = remainingSold.subList(1, remainingSold.size),
+                    remainingSold = remainingSold.removeFirst(),
                     gain = leftOver.gain + gain
             )
         }
     }
+
+    private fun List<Transaction>.removeFirst(): List<Transaction> = this.subList(1, this.size)
 
     internal sealed class LeftOver {
         data class PurchaseLeftOver(val purchase: Transaction, val gain: Double) : LeftOver()
@@ -54,20 +56,20 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
         val itemsLeft = purchase.items - sale.items
 
         return when {
+            itemsLeft == 0.0 -> LeftOverOneEach.BothUsed(gain = sale.currencyAmount - purchase.currencyAmount)
             itemsLeft > 0 -> {
                 val purchaseLeftOver = Transaction(purchase, itemsLeft)
-                val numSold = (purchase.items - purchaseLeftOver.items)
+                val numSold = purchase.items - purchaseLeftOver.items
                 val gain = (sale.currencyPerUnit - purchase.currencyPerUnit) * numSold
 
-                LeftOverOneEach.PurchaseLeftOver(purchaseLeftOver, gain)
+                LeftOverOneEach.PurchaseLeftOver(purchase = purchaseLeftOver, gain = gain)
             }
-            itemsLeft == 0.0 -> LeftOverOneEach.BothUsed(sale.currencyAmount - purchase.currencyAmount)
             itemsLeft < 0 -> {
                 val saleLeftOver = Transaction(sale, itemsLeft.absoluteValue)
-                val numSold = (sale.items - saleLeftOver.items)
+                val numSold = sale.items - saleLeftOver.items
                 val gain = (sale.currencyPerUnit - purchase.currencyPerUnit) * numSold
 
-                LeftOverOneEach.SoldLeftOver(saleLeftOver, gain)
+                LeftOverOneEach.SoldLeftOver(sold = saleLeftOver, gain = gain)
             }
             else -> throw IllegalStateException()
         }
