@@ -56,7 +56,7 @@ object Fifo {
      * After it computes the gain on that purchase, it is added to the existing gain
      */
 
-    internal fun useOnePurchase(purchase: Transaction, remainingSold: List<Transaction>, gain: Double = 0.0): LeftOver {
+    internal tailrec fun useOnePurchase(purchase: Transaction, remainingSold: List<Transaction>, gain: Double = 0.0): LeftOver {
 
         val sold = remainingSold.firstOrNull() ?: return LeftOver.PurchaseLeftOver(purchase = purchase, gain = gain)
 
