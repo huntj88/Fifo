@@ -20,12 +20,12 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
 
     internal fun useOnePurchase(purchase: Transaction, remainingSold: List<Transaction>, gain: Double = 0.0): LeftOver {
 
-        remainingSold.firstOrNull() ?: return LeftOver.PurchaseLeftOver(purchase, gain)
+        val sold = remainingSold.firstOrNull() ?: return LeftOver.PurchaseLeftOver(purchase, gain)
 
-        val leftOver = useOneSaleOnPurchase(purchase, remainingSold.first())
+        val leftOver = this.useOneSaleOnPurchase(purchase = purchase, sold = sold)
 
         return when (leftOver) {
-            is LeftOverOneEach.PurchaseLeftOver -> useOnePurchase(
+            is LeftOverOneEach.PurchaseLeftOver -> this.useOnePurchase(
                     purchase = leftOver.purchase,
                     remainingSold = remainingSold.removeFirst(),
                     gain = leftOver.gain + gain
@@ -52,24 +52,24 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
     }
 
 
-    internal fun useOneSaleOnPurchase(purchase: Transaction, sale: Transaction): LeftOverOneEach {
-        val itemsLeft = purchase.items - sale.items
+    internal fun useOneSaleOnPurchase(purchase: Transaction, sold: Transaction): LeftOverOneEach {
+        val itemsLeft = purchase.items - sold.items
 
         return when {
-            itemsLeft == 0.0 -> LeftOverOneEach.BothUsed(gain = sale.currencyAmount - purchase.currencyAmount)
+            itemsLeft == 0.0 -> LeftOverOneEach.BothUsed(gain = sold.currencyAmount - purchase.currencyAmount)
             itemsLeft > 0 -> {
-                val purchaseLeftOver = Transaction(purchase, itemsLeft)
+                val purchaseLeftOver = Transaction(transaction = purchase, itemsLeft = itemsLeft)
                 val numSold = purchase.items - purchaseLeftOver.items
-                val gain = (sale.currencyPerUnit - purchase.currencyPerUnit) * numSold
+                val gain = (sold.currencyPerUnit - purchase.currencyPerUnit) * numSold
 
                 LeftOverOneEach.PurchaseLeftOver(purchase = purchaseLeftOver, gain = gain)
             }
             itemsLeft < 0 -> {
-                val saleLeftOver = Transaction(sale, itemsLeft.absoluteValue)
-                val numSold = sale.items - saleLeftOver.items
-                val gain = (sale.currencyPerUnit - purchase.currencyPerUnit) * numSold
+                val soldLeftOver = Transaction(sold, itemsLeft.absoluteValue)
+                val numSold = sold.items - soldLeftOver.items
+                val gain = (sold.currencyPerUnit - purchase.currencyPerUnit) * numSold
 
-                LeftOverOneEach.SoldLeftOver(sold = saleLeftOver, gain = gain)
+                LeftOverOneEach.SoldLeftOver(sold = soldLeftOver, gain = gain)
             }
             else -> throw IllegalStateException()
         }
@@ -91,6 +91,6 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
         )
 
         val currencyPerUnit: Double
-            get() = currencyAmount / items
+            get() = this.currencyAmount / items
     }
 }
