@@ -4,23 +4,34 @@ import kotlin.math.absoluteValue
 
 infix fun Double.to(that: Double): Fifo.Transaction = Fifo.Transaction(this, that)
 
-class Fifo(private val purchased: List<Transaction>, private val sold: List<Transaction>) {
+/** just a pair with named variables. I can't come up with a better name without it being super verbose **/
+private data class Pair(val gainSoFar: Double, val remainingSold: List<Fifo.Transaction>)
+
+class Fifo(private val purchases: List<Transaction>, private val sales: List<Transaction>) {
 
     fun findRealizedGain(): Double {
-        return purchased
-                .fold(Pair(0.0, sold)) { acc, transaction ->
-                    val leftOver = useOnePurchase(transaction, acc.second)
-                    val resultFromOnePass = when (leftOver) {
-                        is LeftOver.PurchaseLeftOver -> Pair(leftOver.gain, listOf())
-                        is LeftOver.SoldLeftOver -> Pair(leftOver.gain, leftOver.remainingSold)
-                    }
-                    Pair(acc.first + resultFromOnePass.first, resultFromOnePass.second)
-                }.first
+
+        val initialValue = Pair(gainSoFar = 0.0, remainingSold = this.sales)
+        return this.purchases.fold(initial = initialValue) { acc, purchase ->
+
+            val onePassResults = this.useOnePurchase(
+                    purchase = purchase,
+                    remainingSold = acc.remainingSold
+            ).handleRemainingSold()
+
+            val currentGain = acc.gainSoFar + onePassResults.gainSoFar
+            Pair(gainSoFar = currentGain, remainingSold = onePassResults.remainingSold)
+        }.gainSoFar
+    }
+
+    private fun LeftOver.handleRemainingSold(): Pair = when (this) {
+        is LeftOver.PurchaseLeftOver -> Pair(gainSoFar = this.gain, remainingSold = listOf())
+        is LeftOver.SoldLeftOver -> Pair(gainSoFar = this.gain, remainingSold = this.remainingSold)
     }
 
     internal fun useOnePurchase(purchase: Transaction, remainingSold: List<Transaction>, gain: Double = 0.0): LeftOver {
 
-        val sold = remainingSold.firstOrNull() ?: return LeftOver.PurchaseLeftOver(purchase, gain)
+        val sold = remainingSold.firstOrNull() ?: return LeftOver.PurchaseLeftOver(purchase = purchase, gain = gain)
 
         val leftOver = this.useOneSaleOnPurchase(purchase = purchase, sold = sold)
 
@@ -50,7 +61,6 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
         data class PurchaseLeftOver(val purchase: Transaction, val gain: Double) : LeftOver()
         data class SoldLeftOver(val remainingSold: List<Transaction>, val gain: Double) : LeftOver()
     }
-
 
     internal fun useOneSaleOnPurchase(purchase: Transaction, sold: Transaction): LeftOverOneEach {
         val itemsLeft = purchase.items - sold.items
