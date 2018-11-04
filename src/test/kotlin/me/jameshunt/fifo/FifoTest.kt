@@ -55,7 +55,7 @@ class FifoTest {
     @Test
     fun useOnePurchaseTest() {
 
-        val one = fifo.useOnePurchase(4.0 to 20.0, listOf(2.0 to 15.0, 2.0 to 15.0)) as Fifo.LeftOver.BothUsed
+        val one = fifo.useOnePurchase(4.0 to 20.0, listOf(2.0 to 15.0, 2.0 to 15.0)) as Fifo.LeftOver.SoldLeftOver
         Assert.assertEquals(10.0, one.gain, 0.0001) // should be gain of 10
 
         val two = fifo.useOnePurchase(5.0 to 20.0, listOf(2.0 to 15.0, 2.0 to 15.0)) as Fifo.LeftOver.PurchaseLeftOver
@@ -64,10 +64,10 @@ class FifoTest {
         val three = fifo.useOnePurchase(10.0 to 20.0, listOf(2.0 to 15.0, 6.0 to 50.0)) as Fifo.LeftOver.PurchaseLeftOver
         Assert.assertEquals(49.0, three.gain, 0.0001) // should be gain of 49
 
-        val four = fifo.useOnePurchase(8.0 to 20.0, listOf(2.0 to 15.0, 6.0 to 50.0)) as Fifo.LeftOver.BothUsed
+        val four = fifo.useOnePurchase(8.0 to 20.0, listOf(2.0 to 15.0, 6.0 to 50.0)) as Fifo.LeftOver.SoldLeftOver
         Assert.assertEquals(45.0, four.gain, 0.0001) // should be gain of 45
 
-        val five = fifo.useOnePurchase(8.0 to 80.0, listOf(2.0 to 15.0, 6.0 to 50.0)) as Fifo.LeftOver.BothUsed
+        val five = fifo.useOnePurchase(8.0 to 80.0, listOf(2.0 to 15.0, 6.0 to 50.0)) as Fifo.LeftOver.SoldLeftOver
         Assert.assertEquals(-15.0, five.gain, 0.0001) // should be gain of -15
 
         val six = fifo.useOnePurchase(10.0 to 80.0, listOf(2.0 to 15.0, 6.7 to 50.0)) as Fifo.LeftOver.PurchaseLeftOver

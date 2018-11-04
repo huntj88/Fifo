@@ -12,7 +12,6 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
                     val leftOver = useOnePurchase(transaction, acc.second)
                     val resultFromOnePass = when (leftOver) {
                         is LeftOver.PurchaseLeftOver -> Pair(leftOver.gain, listOf())
-                        is LeftOver.BothUsed -> Pair(leftOver.gain, leftOver.remainingSold)
                         is LeftOver.SoldLeftOver -> Pair(leftOver.gain, leftOver.remainingSold)
                     }
                     Pair(acc.first + resultFromOnePass.first, resultFromOnePass.second)
@@ -38,7 +37,7 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
                         gain = leftOver.gain + gain
                 )
             }
-            is LeftOverOneEach.BothUsed -> LeftOver.BothUsed(
+            is LeftOverOneEach.BothUsed -> LeftOver.SoldLeftOver(
                     remainingSold = remainingSold.subList(1, remainingSold.size),
                     gain = leftOver.gain + gain
             )
@@ -48,7 +47,6 @@ class Fifo(private val purchased: List<Transaction>, private val sold: List<Tran
     internal sealed class LeftOver {
         data class PurchaseLeftOver(val purchase: Transaction, val gain: Double) : LeftOver()
         data class SoldLeftOver(val remainingSold: List<Transaction>, val gain: Double) : LeftOver()
-        data class BothUsed(val remainingSold: List<Transaction>, val gain: Double) : LeftOver()
     }
 
 
