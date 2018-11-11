@@ -13,7 +13,10 @@ import kotlin.math.absoluteValue
 
 object Fifo {
 
-    data class Results(val gainSoFar: Double, val leftOverPurchases: List<Fifo.Transaction>)
+    sealed class Results(val gainSoFar: Double) {
+        class LeftOverPurchases(val leftOverPurchases: List<Fifo.Transaction>, gainSoFar: Double): Results(gainSoFar)
+        class LeftOverSales(val leftOverSales: List<Fifo.Transaction>, gainSoFar: Double): Results(gainSoFar)
+    }
 
     private data class AccumulateResults(
             val gainSoFar: Double,
@@ -51,7 +54,10 @@ object Fifo {
                     remainingPurchases = remainingPurchases
             )
         }.let {
-            Results(gainSoFar = it.gainSoFar, leftOverPurchases = it.remainingPurchases)
+            when {
+                it.remainingPurchases.isNotEmpty() -> Results.LeftOverPurchases(it.remainingPurchases, it.gainSoFar)
+                else -> Results.LeftOverSales(it.remainingSold, it.gainSoFar)
+            }
         }
     }
 
