@@ -3,8 +3,9 @@ package me.jameshunt.fifo
 import org.junit.Assert
 import org.junit.Test
 
-class FifoTest {
+infix fun Double.to(that: Double): Fifo.Transaction = Fifo.Transaction(this, that)
 
+class FifoTest {
 
     private val purchased = listOf(
             2.0 to 20.0,
@@ -35,7 +36,9 @@ class FifoTest {
     fun findRealizedGainTest() {
         // purchased.printTotal()
         // sold.printTotal()
-        Assert.assertEquals(64.38, Fifo.findRealizedGain(purchased, sold), 0.1)
+
+        val realizedGainAndLeftOver = Fifo.findRealizedGain(purchased, sold)
+        Assert.assertEquals(64.38, realizedGainAndLeftOver.gainSoFar, 0.1)
     }
 
     @Test

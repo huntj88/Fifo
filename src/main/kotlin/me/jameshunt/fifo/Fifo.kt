@@ -2,17 +2,24 @@ package me.jameshunt.fifo
 
 import kotlin.math.absoluteValue
 
-infix fun Double.to(that: Double): Fifo.Transaction = Fifo.Transaction(this, that)
-
 /**
  * Functional approach to computing gain using "First in, First out"
  *
  * Yay, no state
  */
 
-private data class Pair(val gainSoFar: Double, val remainingSold: List<Fifo.Transaction>)
+
+
 
 object Fifo {
+
+    data class Results(val gainSoFar: Double, val leftOverPurchases: List<Fifo.Transaction>)
+
+    private data class AccumulateResults(
+            val gainSoFar: Double,
+            val remainingSold: List<Fifo.Transaction>,
+            val remainingPurchases: List<Fifo.Transaction> = listOf()
+    )
 
     data class Transaction(val items: Double, val currencyAmount: Double) {
 
@@ -25,9 +32,9 @@ object Fifo {
             get() = this.currencyAmount / this.items
     }
 
-    fun findRealizedGain(purchases: List<Transaction>, sales: List<Transaction>): Double {
+    fun findRealizedGain(purchases: List<Transaction>, sales: List<Transaction>): Results {
 
-        val initialValue = Pair(gainSoFar = 0.0, remainingSold = sales)
+        val initialValue = AccumulateResults(gainSoFar = 0.0, remainingSold = sales)
         return purchases.fold(initial = initialValue) { acc, purchase ->
 
             val onePassResults = this.useOnePurchase(
@@ -36,13 +43,21 @@ object Fifo {
             ).handleLeftOver()
 
             val currentGain = acc.gainSoFar + onePassResults.gainSoFar
-            Pair(gainSoFar = currentGain, remainingSold = onePassResults.remainingSold)
-        }.gainSoFar
+            val remainingPurchases = acc.remainingPurchases + onePassResults.remainingPurchases
+
+            AccumulateResults(
+                    gainSoFar = currentGain,
+                    remainingSold = onePassResults.remainingSold,
+                    remainingPurchases = remainingPurchases
+            )
+        }.let {
+            Results(gainSoFar = it.gainSoFar, leftOverPurchases = it.remainingPurchases)
+        }
     }
 
-    private fun LeftOver.handleLeftOver(): Pair = when (this) {
-        is LeftOver.PurchaseLeftOver -> Pair(gainSoFar = this.gain, remainingSold = listOf())
-        is LeftOver.SoldLeftOver -> Pair(gainSoFar = this.gain, remainingSold = this.remainingSold)
+    private fun LeftOver.handleLeftOver(): AccumulateResults = when (this) {
+        is LeftOver.PurchaseLeftOver -> AccumulateResults(gainSoFar = this.gain, remainingSold = listOf(), remainingPurchases = listOf(this.purchase))
+        is LeftOver.SoldLeftOver -> AccumulateResults(gainSoFar = this.gain, remainingSold = this.remainingSold)
     }
 
     /**
