@@ -8,9 +8,6 @@ import kotlin.math.absoluteValue
  * Yay, no state
  */
 
-
-
-
 object Fifo {
 
     sealed class Results(val gainSoFar: Double) {
