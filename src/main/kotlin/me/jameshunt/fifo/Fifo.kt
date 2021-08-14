@@ -11,21 +11,20 @@ import kotlin.math.absoluteValue
 object Fifo {
 
     sealed class Results(val gainSoFar: Double) {
-        class LeftOverPurchases(val leftOverPurchases: List<Fifo.Transaction>, gainSoFar: Double): Results(gainSoFar)
-        class LeftOverSales(val leftOverSales: List<Fifo.Transaction>, gainSoFar: Double): Results(gainSoFar)
+        class LeftOverPurchases(val leftOverPurchases: List<Transaction>, gainSoFar: Double) : Results(gainSoFar)
+        class LeftOverSales(val leftOverSales: List<Transaction>, gainSoFar: Double) : Results(gainSoFar)
     }
 
     private data class AccumulateResults(
-            val gainSoFar: Double,
-            val remainingSold: List<Fifo.Transaction>,
-            val remainingPurchases: List<Fifo.Transaction> = listOf()
+        val gainSoFar: Double,
+        val remainingSold: List<Transaction>,
+        val remainingPurchases: List<Transaction> = listOf()
     )
 
     data class Transaction(val items: Double, val currencyAmount: Double) {
-
         constructor(transaction: Transaction, itemsLeft: Double) : this(
-                items = itemsLeft,
-                currencyAmount = transaction.currencyAmount * itemsLeft / transaction.items
+            items = itemsLeft,
+            currencyAmount = transaction.currencyAmount * itemsLeft / transaction.items
         )
 
         val currencyPerUnit: Double
@@ -33,22 +32,20 @@ object Fifo {
     }
 
     fun findRealizedGain(purchases: List<Transaction>, sales: List<Transaction>): Results {
-
         val initialValue = AccumulateResults(gainSoFar = 0.0, remainingSold = sales)
         return purchases.fold(initial = initialValue) { acc, purchase ->
-
             val onePassResults = this.useOnePurchase(
-                    purchase = purchase,
-                    remainingSold = acc.remainingSold
+                purchase = purchase,
+                remainingSold = acc.remainingSold
             ).handleLeftOver()
 
             val currentGain = acc.gainSoFar + onePassResults.gainSoFar
             val remainingPurchases = acc.remainingPurchases + onePassResults.remainingPurchases
 
             AccumulateResults(
-                    gainSoFar = currentGain,
-                    remainingSold = onePassResults.remainingSold,
-                    remainingPurchases = remainingPurchases
+                gainSoFar = currentGain,
+                remainingSold = onePassResults.remainingSold,
+                remainingPurchases = remainingPurchases
             )
         }.let {
             when {
@@ -59,7 +56,11 @@ object Fifo {
     }
 
     private fun LeftOver.handleLeftOver(): AccumulateResults = when (this) {
-        is LeftOver.PurchaseLeftOver -> AccumulateResults(gainSoFar = this.gain, remainingSold = listOf(), remainingPurchases = listOf(this.purchase))
+        is LeftOver.PurchaseLeftOver -> AccumulateResults(
+            gainSoFar = this.gain,
+            remainingSold = listOf(),
+            remainingPurchases = listOf(this.purchase)
+        )
         is LeftOver.SoldLeftOver -> AccumulateResults(gainSoFar = this.gain, remainingSold = this.remainingSold)
     }
 
@@ -74,28 +75,29 @@ object Fifo {
      * After it computes the gain on that purchase, it is added to the existing gain
      */
 
-    internal tailrec fun useOnePurchase(purchase: Transaction, remainingSold: List<Transaction>, gain: Double = 0.0): LeftOver {
-
+    internal tailrec fun useOnePurchase(
+        purchase: Transaction,
+        remainingSold: List<Transaction>,
+        gain: Double = 0.0
+    ): LeftOver {
         val sold = remainingSold.firstOrNull() ?: return LeftOver.PurchaseLeftOver(purchase = purchase, gain = gain)
 
-        val leftOver = this.useOneSaleOnPurchase(purchase = purchase, sold = sold)
-
-        return when (leftOver) {
+        return when (val leftOver = this.useOneSaleOnPurchase(purchase = purchase, sold = sold)) {
             is LeftOverOneSale.PurchaseLeftOver -> this.useOnePurchase(
-                    purchase = leftOver.purchase,
-                    remainingSold = remainingSold.removeFirst(),
-                    gain = leftOver.gain + gain
+                purchase = leftOver.purchase,
+                remainingSold = remainingSold.removeFirst(),
+                gain = leftOver.gain + gain
             )
             is LeftOverOneSale.SoldLeftOver -> {
                 val newRemainingSold = listOf(leftOver.sold) + remainingSold.removeFirst()
                 LeftOver.SoldLeftOver(
-                        remainingSold = newRemainingSold,
-                        gain = leftOver.gain + gain
+                    remainingSold = newRemainingSold,
+                    gain = leftOver.gain + gain
                 )
             }
             is LeftOverOneSale.BothUsed -> LeftOver.SoldLeftOver(
-                    remainingSold = remainingSold.removeFirst(),
-                    gain = leftOver.gain + gain
+                remainingSold = remainingSold.removeFirst(),
+                gain = leftOver.gain + gain
             )
         }
     }
